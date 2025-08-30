@@ -1,0 +1,15 @@
+# 文献工作流系统依赖
+
+# LLM客户端
+openai>=1.0.0  # Qwen API客户端依赖
+
+# 数据处理
+dataclasses  # Python 3.7+内置
+typing  # Python 3.5+内置
+
+# 工具库
+pathlib  # Python 3.4+内置
+json  # Python内置
+datetime  # Python内置
+re  # Python内置
+os  # Python内置
