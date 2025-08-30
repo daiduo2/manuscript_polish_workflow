@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 配置管理模块
@@ -51,80 +50,52 @@ class Config:
                 'max_keywords': 30
             },
 
-            # 输出配置
-            'output': {
-                'format': 'markdown',
-                'include_citations': True,
-                'include_metadata': True
+            # 日志配置
+            'logging': {
+                'level': 'INFO',
+                'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             }
         }
 
     def get(self, key_path: str, default: Any = None) -> Any:
-        """
-        获取配置值
-        
-        Args:
-            key_path: 配置键路径，如 'llm.api_key'
-            default: 默认值
-            
-        Returns:
-            配置值
-        """
+        """获取配置值，支持点号分隔的路径"""
         keys = key_path.split('.')
         value = self.settings
-        for key in keys:
-            if isinstance(value, dict) and key in value:
+
+        try:
+            for key in keys:
                 value = value[key]
-            else:
-                return default
-        return value
+            return value
+        except (KeyError, TypeError):
+            return default
 
     def set(self, key_path: str, value: Any) -> None:
-        """
-        设置配置值
-        
-        Args:
-            key_path: 配置键路径
-            value: 配置值
-        """
+        """设置配置值"""
         keys = key_path.split('.')
-        current = self.settings
+        config = self.settings
+
         for key in keys[:-1]:
-            if key not in current:
-                current[key] = {}
-            current = current[key]
-        current[keys[-1]] = value
+            if key not in config:
+                config[key] = {}
+            config = config[key]
+
+        config[keys[-1]] = value
 
     def update_from_env(self) -> None:
-        """
-        从环境变量更新配置
-        """
-        # 更新API密钥
-        api_key = os.getenv('QWEN_API_KEY') or os.getenv('DASHSCOPE_API_KEY')
-        if api_key:
-            self.set('llm.api_key', api_key)
-        
-        # 更新模型名称
-        model = os.getenv('QWEN_MODEL')
-        if model:
-            self.set('llm.model', model)
+        """从环境变量更新配置"""
+        # LLM配置
+        llm_key = os.getenv('QWEN_API_KEY') or os.getenv('DASHSCOPE_API_KEY')
+        if llm_key:
+            self.set('llm.api_key', llm_key)
 
-    @property
-    def output_dir(self) -> Path:
-        """获取输出目录路径"""
-        return self.get('paths.output_dir')
-    
-    @property
-    def metadata_dir(self) -> Path:
-        """获取元数据目录路径"""
-        return self.get('paths.metadata_dir')
-    
-    @property
-    def log_file(self) -> Path:
-        """获取日志文件路径"""
-        return self.get('paths.log_file')
+        # 路径配置
+        if os.getenv('WORKFLOW_OUTPUT_DIR'):
+            self.set('paths.output_dir', Path(os.getenv('WORKFLOW_OUTPUT_DIR')))
+
+        # 工作流配置
+        if os.getenv('MAX_LITERATURE_COUNT'):
+            self.set('workflow.max_literature_count', int(os.getenv('MAX_LITERATURE_COUNT')))
 
 
 # 全局配置实例
 config = Config()
-config.update_from_env()  # 从环境变量更新配置
